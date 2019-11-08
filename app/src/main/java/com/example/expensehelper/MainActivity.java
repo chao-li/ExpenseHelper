@@ -10,12 +10,11 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 
-//import android.support.annotation.NonNull;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-
-
-//import android.support.v7.app.AlertDialog;
-//import android.support.v7.app.AppCompatActivity;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
@@ -24,6 +23,9 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.client.AWSStartupHandler;
+import com.amazonaws.mobile.client.AWSStartupResult;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
@@ -37,7 +39,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 //import com.google.firebase.ml.vision.label.FirebaseVisionLabelDetector;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
-import com.squareup.picasso.Picasso;
+
 import com.wonderkiln.camerakit.CameraKit;
 import com.wonderkiln.camerakit.CameraKitImage;
 import com.wonderkiln.camerakit.CameraView;
@@ -55,6 +57,9 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import timber.log.Timber;
+
+// aws dynamo import
+import com.amazonaws.mobileconnectors.dynamodbv2.dynamodbmapper.DynamoDBMapper;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, CameraKitUtility.CameraFunctionHandler {
 
@@ -92,6 +97,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // initialize AWS
+        AWSMobileClient.getInstance().initialize(this, new AWSStartupHandler() {
+            @Override
+            public void onComplete(AWSStartupResult awsStartupResult) {
+                Timber.d("AWSMobileClient is instantiated and you are connected to AWS!");
+            }
+        }).execute();
+
         ButterKnife.bind(this);
 
         setTitle("Camera");
@@ -115,9 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // set camera event listener
         mCameraView.addCameraKitListener(new CameraKitUtility(this));
 
-
     }
-
 
 
     ///////////////////////////////////////
@@ -149,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
-
+    // BUTTON CLICK RESPONSE ///////////////////////////////////////////////////////
     // When buttons are clicked.
     @Override
     public void onClick(View view) {
@@ -196,26 +207,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
-
-    private void capturePhotoIfReady() {
-        if (canTakePicture == true) {
-            showProgressBar();
-            Timber.d("taking image");
-            mCameraView.captureImage();
-        } else {
-            Toast.makeText(MainActivity.this, "Camera initating, please try again in a few seconds.", Toast.LENGTH_SHORT).show();
-        }
-
-    }
-
-    private void hideUploadCancelSwitch() {
-        //mUploadButton.setVisibility(View.INVISIBLE);
-        //mCancelButton.setVisibility(View.INVISIBLE);
-        //mPrivacySwitch.setVisibility(View.INVISIBLE);
-        //mPublicText.setVisibility(View.INVISIBLE);
-        //mPrivateText.setVisibility(View.INVISIBLE);
-    }
-
+    // INTERFACE CONTROL FUNCTIONS ///////////////////////////////
     private void showProgressBar() {
         mUploadProgress.setVisibility(View.VISIBLE);
         mUploadProgressTextView.setVisibility(View.VISIBLE);
@@ -234,13 +226,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mConfirmPhotoLayout.setVisibility(View.INVISIBLE);
         hideProgressBar();
 
-
-        // show upload or cancel buttons and privacy switch
-        //mUploadButton.setVisibility(View.VISIBLE);
-        //mCancelButton.setVisibility(View.VISIBLE);
-        //mPrivacySwitch.setVisibility(View.VISIBLE);
-        //mPublicText.setVisibility(View.VISIBLE);
-        //mPrivateText.setVisibility(View.VISIBLE);
     }
 
     private void hideProgressBar() {
@@ -249,17 +234,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUploadProgress.setVisibility(View.INVISIBLE);
     }
 
-    private static Bitmap rotateBitmap(Bitmap source, float angle) {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+
+    // CAMERA CAPTURE OPERATION FUNCTIONS //////////////////////////////////////////////////
+    private void capturePhotoIfReady() {
+        if (canTakePicture == true) {
+            showProgressBar();
+            Timber.d("taking image");
+            mCameraView.captureImage();
+        } else {
+            Toast.makeText(MainActivity.this, "Camera initating, please try again in a few seconds.", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
-
-    /////////////////////////////////////////////////////////////////////
-
-
-
+    // CAMERA EVENT LISTENER
     // Camera event listener call back /////////////////////////////////////////////////////////////////////
     @Override
     public void onIsCameraReady(Boolean isReady) {
@@ -274,6 +262,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+
+    // TEXT RECOGNITION FUNCTIONS ////////////////////////////////////////////////////
     private void goToConfirmImageMode(CameraKitImage cameraKitImage) {
         Bitmap originalImage = cameraKitImage.getBitmap();
         Bitmap compressedImage = CompressBitmapUtil.getResizedBitmap(cameraKitImage.getBitmap(), 500);
@@ -288,67 +278,116 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // show confirm image layout
         mConfirmPhotoLayout.setVisibility(View.VISIBLE);
 
-        // display captured photo
-        //RequestOptions options = new RequestOptions();
-        //options.dontAnimate();
-
+        // display the captured photo
         mConfirmPhotoImageView.setImageBitmap(compressedImage);
 
-        /*
-        Glide.with(MainActivity.this)
-                .load(originalImage)
-                //.apply(options)
-                .into(mConfirmPhotoImageView);
-        */
-
+        // turn off the loading icon
         hideProgressBar();
 
-
-        FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(originalImage);
-        FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance()
-                .getOnDeviceTextRecognizer();
-
-        detector.processImage(image)
-                .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
-                    @Override
-                    public void onSuccess(FirebaseVisionText firebaseVisionText) {
-                        processTextRecognitionResult(firebaseVisionText);
-                        backToCameraMode();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Timber.d("nigga this failed");
-                        backToCameraMode();
-
-                    }
-                });
-
+        // begin text recognition
+        textRecognition(originalImage);
 
 
     }
 
+    private void textRecognition(Bitmap originalImage) {
+        FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(originalImage);
+        FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance()
+            .getOnDeviceTextRecognizer();
+
+        detector.processImage(image)
+            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                @Override
+                public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                    processTextRecognitionResult(firebaseVisionText);
+                    backToCameraMode();
+                }
+            })
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Timber.d("nigga this failed");
+                    Toast.makeText(MainActivity.this, "Text recognition failed", Toast.LENGTH_SHORT).show();
+                    backToCameraMode();
+
+                }
+            });
+    }
+
+    // use regex to process the results and only get informationw we want
     private void processTextRecognitionResult(FirebaseVisionText firebaseVisionText) {
         List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
         if (blocks.size() == 0) {
-            Timber.d("No text found");
+            Toast.makeText(MainActivity.this, "No text were found!", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        Timber.d(firebaseVisionText.getText());
 
+        // initiate ABN, prices, and date
+        String abnNumber = "";
+        ArrayList<Double> prices = new ArrayList<Double>();
+        String purchaseDate = "";
+
+        // loop through blocks to get each lines of text
         for (int i = 0; i < blocks.size(); i++) {
             List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
             for (int j = 0; j < lines.size(); j++) {
-                List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
+                String lineText = lines.get(j).getText();
 
-                Timber.d(lines.get(j).getText());
+                // if line contains ABN >>> get abn number
+                if (lineText.contains("ABN") || lineText.contains("abn")) {
+                    Timber.d("abn number: " + lineText);
 
+                    // Regex to to grab only numbers
+                    Pattern numbersOnly = Pattern.compile("\\d+");
+                    Matcher abnMatch = numbersOnly.matcher(lineText);
+
+                    while(abnMatch.find()) {
+                        abnNumber = abnNumber + abnMatch.group();
+                    }
+
+                }
+
+
+                // Regex to get price
+                Pattern priceOnly = Pattern.compile("^\\$?\\d{1,3}(,\\d{3})*(\\.\\d{1,2})?$");
+                Matcher priceMatch = priceOnly.matcher(lineText);
+                while(priceMatch.find()) {
+                    Double price = Double.parseDouble(priceMatch.group().replace("$", ""));
+                    // make sure price is a reasonable number.
+
+                    if (price <= 200.0) {
+                        prices.add(price);
+                    }
+                }
+
+
+                // Regex to get date
+                Pattern dateOnly = Pattern.compile("^(?:(?:31(\\/|-|\\.)(?:0?[13578]|1[02]))\\1|(?:(?:29|30)(\\/|-|\\.)(?:0?[13-9]|1[0-2])\\2))(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$|^(?:29(\\/|-|\\.)0?2\\3(?:(?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)(?:(?:0?[1-9])|(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$");
+                Matcher dateMatch = dateOnly.matcher(lineText);
+                while(dateMatch.find()) {
+                    purchaseDate = dateMatch.group();
+                    break;
+                }
             }
 
         }
+
+        try {
+            Timber.d(abnNumber);
+            Double totalPrice = Collections.max(prices);
+            Timber.d(totalPrice + "");
+            Timber.d(purchaseDate);
+
+            Toast.makeText(MainActivity.this, "ABN:" + abnNumber + ",Price:" + totalPrice + ",Date:" + purchaseDate, Toast.LENGTH_LONG).show();
+        } catch (Exception e){
+            Toast.makeText(MainActivity.this, "Errored Oout", Toast.LENGTH_LONG).show();
+        }
         return;
     }
+
+
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
