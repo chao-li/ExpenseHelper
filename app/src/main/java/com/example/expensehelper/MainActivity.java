@@ -23,9 +23,14 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.client.AWSStartupHandler;
 import com.amazonaws.mobile.client.AWSStartupResult;
+import com.amazonaws.mobile.config.AWSConfiguration;
+import com.amazonaws.models.nosql.FoodExpense2DO;
+import com.amazonaws.models.nosql.FoodExpenseDO;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
@@ -82,6 +87,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @BindView(R.id.cam_activity_cam_rotate) ImageView mCamRotate;
 
 
+    // Declare a DynamoDBMapper object
+    DynamoDBMapper dynamoDBMapper;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -97,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // DYNAMO DB CODES ////////////////////////////////////////////////////////
         // initialize AWS
         AWSMobileClient.getInstance().initialize(this, new AWSStartupHandler() {
             @Override
@@ -104,6 +112,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Timber.d("AWSMobileClient is instantiated and you are connected to AWS!");
             }
         }).execute();
+
+        // AWSMobileClient enables AWS user credentials to access your table
+        AWSMobileClient.getInstance().initialize(this).execute();
+
+        AWSCredentialsProvider credentialsProvider = AWSMobileClient.getInstance().getCredentialsProvider();
+        AWSConfiguration configuration = AWSMobileClient.getInstance().getConfiguration();
+
+        // Add code to instantiate a AmazonDynamoDBClient
+        AmazonDynamoDBClient dynamoDBClient = new AmazonDynamoDBClient(credentialsProvider);
+
+        this.dynamoDBMapper = DynamoDBMapper.builder()
+                .dynamoDBClient(dynamoDBClient)
+                .awsConfiguration(configuration)
+                .build();
+
+        ////////////////////////////////////////////////////////////
+
+
+
+
 
         ButterKnife.bind(this);
 
@@ -381,6 +409,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Timber.d(purchaseDate);
 
             Toast.makeText(MainActivity.this, "ABN:" + abnNumber + ",Price:" + totalPrice + ",Date:" + purchaseDate, Toast.LENGTH_LONG).show();
+
+
+            runDynamoDB(purchaseDate, abnNumber, totalPrice);
+
         } catch (Exception e){
             Toast.makeText(MainActivity.this, "Errored Oout", Toast.LENGTH_LONG).show();
         }
@@ -388,6 +420,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+    private void runDynamoDB(String purchaseDate, String abnNumber, Double totalPrice) {
+
+
+        final FoodExpense2DO foodItem = new FoodExpense2DO();
+
+        foodItem.setUniqueKey(purchaseDate + '-' + abnNumber + '-' + totalPrice);
+        foodItem.setDate(purchaseDate);
+        foodItem.setABN(abnNumber);
+        foodItem.setPrice(totalPrice);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                dynamoDBMapper.save(foodItem);
+                // Item saved
+            }
+        }).start();
+
+       Timber.d("uploading to dynamoDB")        ;
+
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
