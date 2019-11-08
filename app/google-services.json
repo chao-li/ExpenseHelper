@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "786545185119",
+    "firebase_url": "https://expensehelper-57f65.firebaseio.com",
+    "project_id": "expensehelper-57f65",
+    "storage_bucket": "expensehelper-57f65.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786545185119:android:0cdb54b2d98a0cf0c326ea",
+        "android_client_info": {
+          "package_name": "com.example.expensehelper"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "786545185119-aqqcolqp5pn4iqpnv884eniieu68g6kq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdJ4-XHMeQNwmbVDpG-NZhOmYC3zs-aOw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "786545185119-aqqcolqp5pn4iqpnv884eniieu68g6kq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

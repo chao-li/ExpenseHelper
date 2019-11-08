@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cam_activity_cam_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="Object Identifier"
+            android:textColor="@color/common_google_signin_btn_text_dark_focused"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/cam_activity_flash_off"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="50dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintEnd_toStartOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintTop_toTopOf="@+id/cam_activity_cam_trigger"
+            app:srcCompat="@drawable/flash_off"
+             />
+
+        <ImageView
+            android:id="@+id/cam_activity_flash_on"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="50dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintEnd_toStartOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintTop_toTopOf="@+id/cam_activity_cam_trigger"
+            app:srcCompat="@drawable/flash_on"
+            android:visibility="invisible"
+             />
+
+        <ImageView
+            android:id="@+id/cam_activity_cam_rotate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="50dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintStart_toEndOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintTop_toTopOf="@+id/cam_activity_cam_trigger"
+            app:srcCompat="@drawable/camera_rotate" />
+
+
+        <com.wonderkiln.camerakit.CameraView
+            android:id="@+id/cam_activity_cameraview"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginBottom="50dp"
+            android:layout_marginTop="8dp"
+            android:adjustViewBounds="true"
+            app:ckCropOutput="true"
+            app:ckFacing="back"
+            app:ckFlash="on"
+            app:ckFocus="tapWithMarker"
+            app:ckJpegQuality="100"
+            app:ckMethod="still"
+            app:ckPermissions="picture"
+            app:layout_constraintBottom_toTopOf="@+id/cam_activity_cam_trigger"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView">
+
+        </com.wonderkiln.camerakit.CameraView>
+
+
+        <ImageView
+            android:id="@+id/cam_activity_cam_trigger"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_marginBottom="50dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:srcCompat="@drawable/take_photo_ready" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cam_activity_confirm_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible">
+
+        <ImageView
+            android:id="@+id/cam_activity_confirm_image"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginBottom="100dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ProgressBar
+        android:id="@+id/cam_activity_upload_progress"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/cam_activity_progress_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Processing..."
+        android:textColor="@color/colorAccent"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cam_activity_upload_progress"
+        android:visibility="invisible"/>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
